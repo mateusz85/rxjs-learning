@@ -1,5 +1,5 @@
-import { map, pluck, startWith, skip, skipWhile, take, skipUntil, switchMap, concatMap, delay, takeLast, takeWhile, takeUntil, debounce, debounceTime, reduce, scan } from "rxjs/operators";
-import { pipe, from, interval, fromEvent, of, range, merge, concat } from "rxjs";
+import { map, pluck, startWith, skip, skipWhile, take, skipUntil, switchMap, concatMap, delay, takeLast, takeWhile, takeUntil, debounce, debounceTime, reduce, scan, concatAll, tap, mergeAll } from "rxjs/operators";
+import { pipe, from, interval, fromEvent, of, range, merge, concat, combineLatest } from "rxjs";
 import { fromFetch } from 'rxjs/fetch'
 
 
@@ -220,3 +220,44 @@ const streamTwo = fromEvent(submitButton, 'click').pipe(
 );
 
 concat(streamOne, streamTwo).subscribe(data => console.log(data));
+
+// combineLatest()
+// laczy kilka roznych streamow ale upewnia sie ze wszedzie pokazuje ostatnia wartosc
+
+const submitButton = document.getElementById('submit');
+const streamOne = interval(1000).pipe(take(10));
+const streamTwo = fromEvent(submitButton, 'click').pipe(
+    map(event => 'clicked')
+);
+
+const streamThree = interval(10).pipe(take(50));
+const streamFour = interval(2500).pipe(take(3));
+
+combineLatest(streamOne, streamTwo, streamThree, streamFour).subscribe(data => console.log(data));
+
+// concatAll()
+// pokazuje wartosci wszystki zagniezdzonych observabli - merge wszystkich wew observabli - zachowuje kolejnosc
+
+const button = document.getElementById('submit');
+const clicks = fromEvent(button, 'click');
+
+const source = clicks
+    .pipe(
+        tap(event => console.log('clicked')),
+        // inner observable here
+        map(event => interval(1000).pipe(take(3))),
+        concatAll()
+    )
+    .subscribe(data => console.log(data))
+
+// mergeAll()
+// to samo co wyzej ale merguje wszystko na raz bez czekania az sie skoncza
+
+const source = clicks
+    .pipe(
+        tap(event => console.log('clicked')),
+        map(event => interval(1000).pipe(take(3))),
+        // mergeAll(1) - to samo co concatAll
+        mergeAll()
+    )
+    .subscribe(data => console.log(data))
